@@ -78,8 +78,28 @@ class CreatePost(graphene.Mutation):
         return CreatePost(post=post)
 
 
+class UpdatePost(graphene.Mutation):
+    class Arguments:
+        uuid = graphene.Int(required=True)
+        title = graphene.String(required=True)
+        body = graphene.String(required=True)
+        username = graphene.String(required=True)
+
+    post = graphene.Field(lambda : PostObject)
+
+    def mutate(self, info, uuid, title, body, username):
+        user = User.query.filter_by(username=username).first()
+        post = Post(title=title,body=body)
+        if user is not None:
+            post.author = user
+        db.session.update(post).where(post.uuid == uuid)
+        db.session.commit()
+        return UpdatePost(post=post)
+
+
 class Mutation(graphene.ObjectType):
     create_post = CreatePost.Field()
+    update_post = UpdatePost.Field()
 
 
 schema = graphene.Schema(query=Query, mutation=Mutation)
